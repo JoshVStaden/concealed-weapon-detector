@@ -2,8 +2,9 @@
 import torch
 from util.util import show_video
 
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+GUN_DETECTION_MODEL = torch.hub.load('JoshVStaden/yolov5', 'custom', "yolopistol.pt")
 
 # imgs = ['https://ultralytics.com/images/zidane.jpg']
 
-show_video(model)
+if __name__ == '__main__':
+    show_video(GUN_DETECTION_MODEL)

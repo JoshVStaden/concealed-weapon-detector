@@ -1,5 +1,26 @@
 import cv2
 
+def image_object_detection(model, frame, annotate=True):
+    results = model([frame]).pandas().xyxy[0]
+
+    coords = []
+    for idx, res in results.iterrows():
+        print("Found a GUN!")
+        if res.confidence > 0.0:
+            xmin = int(res.xmin)
+            ymin = int(res.ymin)
+            xmax = int(res.xmax)
+            ymax = int(res.ymax)
+            coords.append([(xmin, ymin), (xmax, ymax)])
+            if annotate:
+                frame = cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (255,255,255))
+                frame = cv2.putText(frame, res['name'], (xmin, ymin), cv2.FONT_HERSHEY_COMPLEX, 1, (255,255,255))
+    return (coords, frame)
+
+
+
+
+
 def show_video(model, filename=0):
     """
     Show a model making predictions on a video file.
