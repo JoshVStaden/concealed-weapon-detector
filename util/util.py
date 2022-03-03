@@ -1,12 +1,17 @@
+from unittest import result
 import cv2
 
 def image_object_detection(model, frame, annotate=True):
     results = model([frame]).pandas().xyxy[0]
 
     coords = []
+    conf_scores = [res.confidence for _, res in results.iterrows()]
+    if len(conf_scores) == 0:
+        return (coords, frame)
+    max_conf = max(conf_scores)
     for idx, res in results.iterrows():
         print("Found a GUN!")
-        if res.confidence > 0.0:
+        if res.confidence == max_conf:
             xmin = int(res.xmin)
             ymin = int(res.ymin)
             xmax = int(res.xmax)
@@ -14,7 +19,8 @@ def image_object_detection(model, frame, annotate=True):
             coords.append([(xmin, ymin), (xmax, ymax)])
             if annotate:
                 frame = cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (255,255,255))
-                frame = cv2.putText(frame, res['name'], (xmin, ymin), cv2.FONT_HERSHEY_COMPLEX, 1, (255,255,255))
+                frame = cv2.putText(frame, f"{res['name']} {round(res.confidence, 2)}", (xmin, ymin), cv2.FONT_HERSHEY_COMPLEX, 1, (255,255,255))
+            break
     return (coords, frame)
 
 

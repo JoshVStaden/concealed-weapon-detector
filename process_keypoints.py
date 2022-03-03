@@ -75,12 +75,30 @@ def extract_hand_regions(person_keypoints, frame_shape=(640, 480)):
         return []
 
 
+def hand_coords_to_image_coords(hand_coords_start, hand_box_size, hand_im_shape=(128, 128)):
+    x_start, y_start = hand_coords_start
+    x_scale = hand_box_size[1] / hand_im_shape[1]
+    y_scale = hand_box_size[0] / hand_im_shape[0]
+    def _return_fun(gun_coords):
+        ret_arr = []
+        for [(x_gun_min, y_gun_min), (x_gun_max, y_gun_max)] in gun_coords:
+            scaled_x_min = int(x_gun_min * x_scale)
+            scaled_y_min = int(y_gun_min * y_scale)
+            scaled_x_max = int(x_gun_max * x_scale)
+            scaled_y_max = int(y_gun_max * y_scale)
+            ret_arr.append([(x_start + scaled_x_min, y_start + scaled_y_min), (x_start + scaled_x_max, y_start + scaled_y_max)])
+        return ret_arr
+    return _return_fun
+        
+
+
 def annotate_image(frame, keypoints):
     people = np.unique(keypoints.person_id)
     curr_kp = 0
     for person in people:
         person_keypoints = keypoints[keypoints.person_id == person]
         hand_regions = extract_hand_regions(person_keypoints)
+        # gun_coords = []
         # print(top_left, bottom_right)
         if len(hand_regions) > 0:
             top_left, bottom_right = hand_regions
@@ -88,9 +106,16 @@ def annotate_image(frame, keypoints):
             
             frame = cv2.rectangle(frame, top_left, bottom_right, (255, 0, 0), 2)
 
-            hand_image = cv2.resize(hand_image, (640, 480))
+            hand_size = (bottom_right[0] - top_left[0], bottom_right[1] - top_left[1])
+
+            hand_image = cv2.resize(hand_image, (128, 128))
+            gun_to_image = hand_coords_to_image_coords(top_left, hand_size, hand_im_shape=(128, 128))
             hand_image = cv2.cvtColor(hand_image, cv2.COLOR_BGR2RGB)
-            _, hand_image = image_object_detection(GUN_DETECTION_MODEL, hand_image)
+            gun_coord, hand_image = image_object_detection(GUN_DETECTION_MODEL, hand_image)
+            if len(gun_coord) > 0:
+                min_gun, max_gun = gun_to_image(gun_coord)[0]
+                print(min_gun, max_gun)
+                frame = cv2.rectangle(frame, min_gun, max_gun, (255,255,255))
             cv2.imshow("Hand", hand_image)
         # print(len(person_keypoints.xyc))
         for coords in person_keypoints.xyc:
