@@ -1,6 +1,7 @@
 import cv2
 import pandas as pd
 import numpy as np
+from keras.models import load_model
 
 import config
 from yolo import GUN_DETECTION_MODEL
@@ -9,6 +10,7 @@ from util.util import image_object_detection
 KEYPOINT_FILE_FORMAT_STRING = "keypoints/{}.txt"
 VIDEO_FORMAT_STRING = "../../Datasets/MoviesGuns/{}.mp4"
 
+CLASSIFICATION_MODEL = load_model("pistol_classification")
 
 def read_keypoints_file(vid_number):
     """
@@ -172,6 +174,10 @@ def annotate_image(frame, keypoints, annotate_kp=False, annotate_hand_bbox=False
             # Extract the portion of the image containing the right hand
             top_left, bottom_right = hand_regions
             hand_image = frame[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
+            
+            gun_prediction = CLASSIFICATION_MODEL.predict(cv2.resize(hand_image, (224,224)).reshape(1, 224,224,3))
+            print(gun_prediction)
+            quit()
 
             # Draw rectangle around right hand
             if annotate_hand_bbox:
@@ -182,10 +188,10 @@ def annotate_image(frame, keypoints, annotate_kp=False, annotate_hand_bbox=False
             print(hand_size)
 
             # Resize hand image to (128, 128)
-            hand_image = cv2.resize(hand_image, (64, 64))
+            hand_image = cv2.resize(hand_image, (128, 128))
 
             # Get a converter to global coordinates
-            gun_to_image = hand_coords_to_image_coords(top_left, hand_size, hand_im_shape=(64, 64))
+            gun_to_image = hand_coords_to_image_coords(top_left, hand_size, hand_im_shape=(128, 128))
             hand_image = cv2.cvtColor(hand_image, cv2.COLOR_BGR2RGB)
 
             # Detect any guns within the image of the hand

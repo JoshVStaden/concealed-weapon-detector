@@ -5,6 +5,10 @@ __pycache__/
 
 # C extensions
 *.so
+*.pb
+pistol_classification/
+.vscode/
+*.jpg
 
 # Distribution / packaging
 .Python
